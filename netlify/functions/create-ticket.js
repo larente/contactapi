@@ -36,7 +36,7 @@ exports.handler = async (event) => {
         const ticket = await fetch('https://markanthonysandbox.freshdesk.com/api/v2/tickets', {
           method: 'POST',
           headers: {
-            'Authorization': 'Basic ' + Buffer.from(process.env.Bxa64UPYUOIjLk3GR63 + ':X').toString('base64'),
+            'Authorization': 'Basic ' + Buffer.from(process.env.FRESHDESK_API_KEY + ':X').toString('base64'),
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -55,7 +55,7 @@ exports.handler = async (event) => {
           await fetch(`https://markanthonysandbox.freshdesk.com/api/v2/tickets/${ticket.id}/attachments`, {
             method: 'POST',
             headers: {
-              'Authorization': 'Basic ' + Buffer.from(process.env.Bxa64UPYUOIjLk3GR63 + ':X').toString('base64'),
+              'Authorization': 'Basic ' + Buffer.from(process.env.FRESHDESK_API_KEY + ':X').toString('base64'),
               ...uploadForm.getHeaders()
             },
             body: uploadForm
