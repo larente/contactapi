@@ -2,6 +2,14 @@ const fetch = require('node-fetch');
 const FormData = require('form-data');
 
 exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      body: 'Method Not Allowed',
+    };
+  }
+
+exports.handler = async (event) => {
   try {
     const boundary = event.headers['content-type'].split('boundary=')[1];
     const raw = Buffer.from(event.body, 'base64');
