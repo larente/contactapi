@@ -1,5 +1,3 @@
-// script.js
-
 document
   .querySelector('form#contact-us')
   .addEventListener('submit', async e => {
@@ -8,18 +6,20 @@ document
     const formData = new FormData(form);
 
     try {
-      const res = await fetch('/.netlify/functions/create-ticket', {
-        method: 'POST',      // <-- must be POST
-        body: formData        // <-- must send the form data
-      });
+      const res = await fetch(
+        'https://fabulous-puppy-0af4eb.netlify.app/.netlify/functions/create-ticket',
+        {
+          method: 'POST',
+          mode: 'cors',      // <— add this
+          body: formData
+        }
+      );
 
-      // if it’s an error status, grab the text and throw
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`Server returned ${res.status}: ${text}`);
       }
 
-      // otherwise parse JSON (your function returns JSON on 200)
       const json = await res.json();
       console.log('Success:', json.message);
 
