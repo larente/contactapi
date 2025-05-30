@@ -1,1 +1,19 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact Us</title>
+</head>
+<body>
+  <h1>Contact Us</h1>
+  <form id="contact-form" enctype="multipart/form-data">
+    <label>Name: <input type="text" name="name" required></label><br>
+    <label>Email: <input type="email" name="email" required></label><br>
+    <label>Subject: <input type="text" name="subject" required></label><br>
+    <label>Description:<br><textarea name="description" required></textarea></label><br>
+    <label>Attach Image: <input type="file" name="attachment" accept="image/*"></label><br>
+    <button type="submit">Submit</button>
+  </form>
+  <script src="script.js"></script>
+</body>
+</html>
