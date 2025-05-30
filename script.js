@@ -1,4 +1,15 @@
 document.getElementById('contact-form').addEventListener('submit', async function (e) {
   e.preventDefault();
-  alert("This form currently does not submit tickets directly. You must set up a backend to handle Freshdesk API securely.");
+
+  const form = e.target;
+  const formData = new FormData(form);
+
+  const response = await fetch('/.netlify/functions/create-ticket', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const result = await response.json();
+  alert(result.message || 'Submission complete');
+  if (response.ok) form.reset();
 });
