@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const FormData = require('form-data');
-const Busboy = require('busboy');
+const Busboy = require('busboy').default;
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
