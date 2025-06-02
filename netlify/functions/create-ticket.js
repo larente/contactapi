@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
+const FormData = require('form-data');
 const Busboy = require('busboy');
 
-// CORS headers
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'OPTIONS, POST',
@@ -10,11 +10,7 @@ const CORS = {
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: CORS,
-      body: ''
-    };
+    return { statusCode: 200, headers: CORS, body: '' };
   }
 
   if (event.httpMethod !== 'POST') {
@@ -25,75 +21,88 @@ exports.handler = async (event) => {
     };
   }
 
-  // Parsing multipart form data with Busboy
-  const contentType = event.headers['content-type'];
-  const busboy = Busboy({ headers: { 'content-type': contentType } });
-
+  const busboy = Busboy({ headers: { 'content-type': event.headers['content-type'] } });
   const fields = {};
-  const files = [];
+  let attachment = null;
 
   const busboyPromise = new Promise((resolve, reject) => {
-    busboy.on('field', (fieldname, val) => {
-      fields[fieldname] = val;
-    });
+    busboy.on('field', (fieldname, val) => fields[fieldname] = val);
 
     busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-      let buffer = Buffer.alloc(0);
-      file.on('data', (data) => {
-        buffer = Buffer.concat([buffer, data]);
-      });
+      const chunks = [];
+      file.on('data', (data) => chunks.push(data));
       file.on('end', () => {
-        files.push({ fieldname, filename, buffer, encoding, mimetype });
+        attachment = {
+          buffer: Buffer.concat(chunks),
+          filename,
+          mimetype
+        };
       });
     });
 
-    busboy.on('error', (error) => reject(error));
-    busboy.on('finish', () => resolve());
-    
+    busboy.on('error', reject);
+    busboy.on('finish', resolve);
     busboy.end(Buffer.from(event.body, 'base64'));
   });
 
   try {
     await busboyPromise;
 
-    // Prepare your Freshdesk payload
     const FRESHDESK_API_KEY = process.env.FRESHDESK_API_KEY;
     const FRESHDESK_DOMAIN = process.env.FRESHDESK_DOMAIN;
 
-const ticketPayload = {
-  description: fields.description,
-  subject: fields.subject,
-  email: fields.email,
-  priority: 1,
-  status: 2,
+    // Step 1: Create ticket without attachments
+    const ticketPayload = {
+      description: fields.description,
+      subject: fields.subject,
+      email: fields.email,
+      priority: 1,
+      status: 2,
+      type: fields.type,
+      custom_fields: { cf_birthdate: fields.cf_birthdate }
+    };
 
-  // Required Custom Fields:
-  type: fields.type, // Must match Freshdesk options exactly
-  custom_fields: {
-    cf_birthdate: fields.cf_birthdate // must be yyyy-mm-dd
-  }
-};
-
-    const freshdeskResponse = await fetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets`, {
+    const ticketResponse = await fetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`,
+        Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`
       },
-      body: JSON.stringify(ticketPayload),
+      body: JSON.stringify(ticketPayload)
     });
 
-    const freshdeskData = await freshdeskResponse.json();
+    const ticketData = await ticketResponse.json();
 
-  if (!freshdeskResponse.ok) {
-    throw new Error(`Freshdesk error: ${JSON.stringify(freshdeskData)}`);
-  }
+    if (!ticketResponse.ok) {
+      throw new Error(`Freshdesk ticket creation failed: ${JSON.stringify(ticketData)}`);
+    }
 
-    // Return success
+    // Step 2: Upload attachment if present
+    if (attachment) {
+      const formData = new FormData();
+      formData.append('attachments[]', attachment.buffer, {
+        filename: attachment.filename,
+        contentType: attachment.mimetype
+      });
+
+      const attachResponse = await fetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets/${ticketData.id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`
+        },
+        body: formData
+      });
+
+      if (!attachResponse.ok) {
+        const attachError = await attachResponse.text();
+        throw new Error(`Attachment upload failed: ${attachError}`);
+      }
+    }
+
     return {
       statusCode: 200,
       headers: CORS,
-      body: JSON.stringify({ message: 'Ticket created successfully!', ticket: freshdeskData }),
+      body: JSON.stringify({ message: 'Ticket and attachment created successfully!', ticket: ticketData }),
     };
 
   } catch (error) {
