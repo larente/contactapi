@@ -1,7 +1,6 @@
 const fetch = require('node-fetch');
 const FormData = require('form-data');
-const { IncomingForm } = require('formidable');
-const fs = require('fs');
+const Busboy = require('busboy'); // ✅ works with v0.3.1
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -9,7 +8,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type'
 };
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: CORS, body: '' };
   }
@@ -22,30 +21,41 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Parse form data using formidable
-  const form = new IncomingForm({ multiples: false, keepExtensions: true, uploadDir: '/tmp' });
+  const fields = {};
+  let attachment = null;
 
-  const parsed = await new Promise((resolve, reject) => {
-    // Netlify sends event.body as base64, so we convert it
-    form.parse({
-      headers: event.headers,
-      method: event.httpMethod,
-      url: '',
-      body: Buffer.from(event.body, 'base64'),
-      on: () => {}
-    }, (err, fields, files) => {
-      if (err) reject(err);
-      else resolve({ fields, files });
+  const busboy = new Busboy({ headers: { 'content-type': event.headers['content-type'] } });
+
+  const parsePromise = new Promise((resolve, reject) => {
+    busboy.on('field', (fieldname, value) => {
+      fields[fieldname] = value;
     });
+
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+      const chunks = [];
+      file.on('data', (data) => chunks.push(data));
+      file.on('end', () => {
+        attachment = {
+          buffer: Buffer.concat(chunks),
+          filename,
+          mimetype
+        };
+      });
+    });
+
+    busboy.on('finish', resolve);
+    busboy.on('error', reject);
+
+    // Convert body from base64 to buffer
+    busboy.end(Buffer.from(event.body, 'base64'));
   });
 
-  const { fields, files } = parsed;
-
   try {
+    await parsePromise;
+
     const FRESHDESK_API_KEY = process.env.FRESHDESK_API_KEY;
     const FRESHDESK_DOMAIN = process.env.FRESHDESK_DOMAIN;
 
-    // Step 1: Create the ticket
     const ticketPayload = {
       description: fields.description,
       subject: fields.subject,
@@ -58,7 +68,7 @@ exports.handler = async (event, context) => {
       }
     };
 
-    const ticketRes = await fetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets`, {
+    const ticketResponse = await fetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,18 +77,18 @@ exports.handler = async (event, context) => {
       body: JSON.stringify(ticketPayload)
     });
 
-    const ticketData = await ticketRes.json();
-    if (!ticketRes.ok) {
-      throw new Error(`Ticket creation failed: ${JSON.stringify(ticketData)}`);
+    const ticketData = await ticketResponse.json();
+
+    if (!ticketResponse.ok) {
+      throw new Error(`Freshdesk ticket creation failed: ${JSON.stringify(ticketData)}`);
     }
 
-    // Step 2: Upload file if one exists
-    if (files.attachment && files.attachment.filepath) {
-      const file = files.attachment;
+    // Step 2: upload attachment if present
+    if (attachment && attachment.buffer && attachment.filename) {
       const formData = new FormData();
-      formData.append('attachments[]', fs.createReadStream(file.filepath), file.originalFilename);
+      formData.append('attachments[]', attachment.buffer, attachment.filename);
 
-      const attachRes = await fetch(
+      const attachResponse = await fetch(
         `https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets/${ticketData.id}/attachments`,
         {
           method: 'POST',
@@ -90,16 +100,16 @@ exports.handler = async (event, context) => {
         }
       );
 
-      if (!attachRes.ok) {
-        const text = await attachRes.text();
-        throw new Error(`Attachment upload failed: ${text}`);
+      if (!attachResponse.ok) {
+        const attachError = await attachResponse.text();
+        throw new Error(`Attachment upload failed: ${attachError}`);
       }
     }
 
     return {
       statusCode: 200,
       headers: CORS,
-      body: JSON.stringify({ message: 'Ticket created successfully!', ticket: ticketData })
+      body: JSON.stringify({ message: 'Ticket and attachment created successfully!', ticket: ticketData })
     };
 
   } catch (error) {
