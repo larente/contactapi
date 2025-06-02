@@ -84,27 +84,27 @@ exports.handler = async (event) => {
     }
 
     // Step 2: upload attachment if present
-    if (attachment && attachment.buffer && attachment.filename) {
-      const formData = new FormData();
-      formData.append('attachments[]', attachment.buffer, attachment.filename);
+   if (attachment && attachment.buffer && attachment.filename) {
+  const formData = new FormData();
+  formData.append('attachments[]', attachment.buffer, attachment.filename);
 
-      const attachResponse = await fetch(
-        `https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets/${ticketData.id}/attachments`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`,
-            ...formData.getHeaders()
-          },
-          body: formData
-        }
-      );
-
-      if (!attachResponse.ok) {
-        const attachError = await attachResponse.text();
-        throw new Error(`Attachment upload failed: ${attachError}`);
-      }
+  const attachResponse = await fetch(
+    `https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets/${ticketData.id}/attachments`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`,
+        ...formData.getHeaders() // ✅ sets Content-Type + boundary properly
+      },
+      body: formData
     }
+  );
+
+  if (!attachResponse.ok) {
+    const attachError = await attachResponse.text();
+    throw new Error(`Attachment upload failed: ${attachError}`);
+  }
+}
 
     return {
       statusCode: 200,
