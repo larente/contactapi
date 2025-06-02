@@ -7,12 +7,12 @@
 <body>
   <h1>Contact Us</h1>
 <form id="contact-us">
-  <input type="text" name="subject" required>
-  <input type="email" name="email" required>
-  <textarea name="description" required></textarea>
+  Name <input type="text" name="subject" required><BR>
+  Email<input type="email" name="email" required><BR>
+  Description<textarea name="description" required></textarea><BR><BR>
 
   <!-- ADD THESE -->
-  <select name="type" required>
+ Issue <select name="type" required>
     <option value="Product/Flavour">Product/Flavour</option>
     <option value="Quality Concern">Quality Concern</option>
     <option value="Ingredients/Nutrition Info">Ingredients/Nutrition Info</option>
@@ -22,9 +22,9 @@
     <option value="Other">Other</option>
     <option value="Order Inquiries">Order Inquiries</option>
     <option value="Coupons/Rebates">Coupons/Rebates</option>
-  </select>
+  </select><BR>
 
-  <input type="date" name="cf_birthdate" required>
+  Birthdate<input type="date" name="cf_birthdate" required><BR>
 
   <button type="submit">Submit</button>
 </form>
