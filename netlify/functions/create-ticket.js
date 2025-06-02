@@ -77,8 +77,7 @@ exports.handler = async (event) => {
       throw new Error(`Freshdesk ticket creation failed: ${JSON.stringify(ticketData)}`);
     }
 
-   // Step 2: Upload attachment if present
-if (attachment) {
+ if (attachment) {
   const formData = new FormData();
   formData.append('attachments[]', attachment.buffer, attachment.filename);
 
@@ -87,7 +86,9 @@ if (attachment) {
     {
       method: 'POST',
       headers: {
-        Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`
+        // DO NOT explicitly set 'Content-Type', FormData sets it automatically
+        Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`,
+        ...formData.getHeaders()  // <-- THIS LINE IS CRUCIAL
       },
       body: formData
     }
