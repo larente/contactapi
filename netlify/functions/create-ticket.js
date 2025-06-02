@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const FormData = require('form-data');
-const Busboy = require('busboy').default;
+const { Busboy } = require('busboy');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
