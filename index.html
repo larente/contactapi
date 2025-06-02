@@ -6,14 +6,28 @@
 </head>
 <body>
   <h1>Contact Us</h1>
-  <form id="contact-us" enctype="multipart/form-data">
-    <label>Name: <input type="text" name="name" required></label><br>
-    <label>Email: <input type="email" name="email" required></label><br>
-    <label>Subject: <input type="text" name="subject" required></label><br>
-    <label>Description:<br><textarea name="description" required></textarea></label><br>
-    <label>Attach Image: <input type="file" name="attachment" accept="image/*"></label><br>
-    <button type="submit">Submit</button>
-  </form>
+<form id="contact-us">
+  <input type="text" name="subject" required>
+  <input type="email" name="email" required>
+  <textarea name="description" required></textarea>
+
+  <!-- ADD THESE -->
+  <select name="type" required>
+    <option value="Product/Flavour">Product/Flavour</option>
+    <option value="Quality Concern">Quality Concern</option>
+    <option value="Ingredients/Nutrition Info">Ingredients/Nutrition Info</option>
+    <option value="Marketing/Advertising Info">Marketing/Advertising Info</option>
+    <option value="Sponsorship">Sponsorship</option>
+    <option value="PR Opportunity">PR Opportunity</option>
+    <option value="Other">Other</option>
+    <option value="Order Inquiries">Order Inquiries</option>
+    <option value="Coupons/Rebates">Coupons/Rebates</option>
+  </select>
+
+  <input type="date" name="cf_birthdate" required>
+
+  <button type="submit">Submit</button>
+</form>
   <script src="script.js"></script>
 </body>
 </html>
