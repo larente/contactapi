@@ -60,13 +60,19 @@ exports.handler = async (event) => {
     const FRESHDESK_API_KEY = process.env.FRESHDESK_API_KEY;
     const FRESHDESK_DOMAIN = process.env.FRESHDESK_DOMAIN;
 
-    const ticketPayload = {
-      description: fields.description || 'No description provided',
-      subject: fields.subject || 'New Ticket',
-      email: fields.email,
-      status: 2,
-      priority: 1,
-    };
+const ticketPayload = {
+  description: fields.description,
+  subject: fields.subject,
+  email: fields.email,
+  priority: 1,
+  status: 2,
+
+  // Required Custom Fields:
+  type: fields.type, // Must match Freshdesk options exactly
+  custom_fields: {
+    cf_birthdate: fields.cf_birthdate // must be yyyy-mm-dd
+  }
+};
 
     const freshdeskResponse = await fetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets`, {
       method: 'POST',
