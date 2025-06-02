@@ -68,7 +68,7 @@ exports.handler = async (event) => {
       priority: 1,
     };
 
-    const freshdeskResponse = await fetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets`, {
+    const freshdeskResponse = await fetch(`https://markanythonysandbox.freshdesk.com/api/v2/tickets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
