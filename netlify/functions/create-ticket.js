@@ -77,27 +77,27 @@ exports.handler = async (event) => {
       throw new Error(`Freshdesk ticket creation failed: ${JSON.stringify(ticketData)}`);
     }
 
-    // Step 2: Upload attachment if present
-    if (attachment) {
-      const formData = new FormData();
-      formData.append('attachments[]', attachment.buffer, {
-        filename: attachment.filename,
-        contentType: attachment.mimetype
-      });
+   // Step 2: Upload attachment if present
+if (attachment) {
+  const formData = new FormData();
+  formData.append('attachments[]', attachment.buffer, attachment.filename);
 
-      const attachResponse = await fetch(`https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets/${ticketData.id}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`
-        },
-        body: formData
-      });
-
-      if (!attachResponse.ok) {
-        const attachError = await attachResponse.text();
-        throw new Error(`Attachment upload failed: ${attachError}`);
-      }
+  const attachResponse = await fetch(
+    `https://${FRESHDESK_DOMAIN}.freshdesk.com/api/v2/tickets/${ticketData.id}/attachments`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${FRESHDESK_API_KEY}:X`).toString('base64')}`
+      },
+      body: formData
     }
+  );
+
+  if (!attachResponse.ok) {
+    const attachError = await attachResponse.text();
+    throw new Error(`Attachment upload failed: ${attachError}`);
+  }
+}
 
     return {
       statusCode: 200,
