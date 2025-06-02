@@ -79,9 +79,9 @@ exports.handler = async (event) => {
 
     const freshdeskData = await freshdeskResponse.json();
 
-    if (!freshdeskResponse.ok) {
-      throw new Error(freshdeskData.message || 'Error creating Freshdesk ticket.');
-    }
+  if (!freshdeskResponse.ok) {
+    throw new Error(`Freshdesk error: ${JSON.stringify(freshdeskData)}`);
+  }
 
     // Return success
     return {
