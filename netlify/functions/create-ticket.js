@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const FormData = require('form-data');
-const { Busboy } = require('busboy');
+import Busboy from 'busboy'; // Correct import
+const bb = new Busboy({ headers: req.headers });
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
